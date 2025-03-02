@@ -304,4 +304,4 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Initialize the Game ---
   spawnEnemy();
   console.log("Game initialized. Ready to expand!");
-});
+})
