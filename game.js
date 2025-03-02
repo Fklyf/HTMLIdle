@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Inject CSS for the flash animation
+  // Inject CSS for the flash animation.
   const style = document.createElement("style");
   style.innerHTML = `
     @keyframes flashAnimation {
@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
       100% { color: #AAAAAA; }
     }
     .flash {
-      animation: flashAnimation 0.5s ease;
+      animation: flashAnimation 1s ease;
     }
   `;
   document.head.appendChild(style);
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Basic Game Variables ---
   let score = 0;
   let increment = 1;
-  let enemyHP = 100;
+  let enemyHP = 100.00;
   let enemyType = "None";
   
   // --- Elemental Damage & Upgrade Variables ---
@@ -63,32 +63,26 @@ document.addEventListener("DOMContentLoaded", function () {
   // Enemy Display Container
   const enemyDisplay = document.createElement("div");
   enemyDisplay.style.marginBottom = "20px";
+  enemyDisplay.style.color = "#FFFFFF";
+  enemyDisplay.style.fontSize = "20px";
   gameContainer.appendChild(enemyDisplay);
 
-  // Container for Enemy HP & Damage (inline)
-  const enemyInfo = document.createElement("div");
-  enemyInfo.style.fontSize = "20px";
-  enemyInfo.style.color = "#FFFFFF";
-  // Ensure inline display for contained spans
-  enemyInfo.style.display = "inline";
-  enemyDisplay.appendChild(enemyInfo);
-  
-  // Enemy HP element as an inline span
-  const enemyHPElem = document.createElement("span");
-  enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
-  enemyHPElem.style.display = "inline";
-  enemyInfo.appendChild(enemyHPElem);
+  // Enemy HP Element (on its own line)
+  const enemyHPElem = document.createElement("div");
+  enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
+  enemyDisplay.appendChild(enemyHPElem);
 
-  // Damage Display as an inline span (with margin-left)
-  const damageDisplay = document.createElement("span");
-  damageDisplay.style.marginLeft = "10px";
-  damageDisplay.style.display = "inline";
+  // Damage Display (on a new line with brackets)
+  const damageDisplay = document.createElement("div");
+  damageDisplay.style.marginTop = "5px";
   damageDisplay.style.color = "#AAAAAA"; // initial gray
-  enemyInfo.appendChild(damageDisplay);
+  // Make sure it's a block element so it appears on its own line.
+  damageDisplay.style.display = "block";
+  // Set up the CSS transition via the injected flash class.
+  enemyDisplay.appendChild(damageDisplay);
 
-  // Enemy Type Display (below HP)
+  // Enemy Type Display (on its own line)
   const enemyTypeElem = document.createElement("div");
-  enemyTypeElem.style.fontSize = "20px";
   enemyTypeElem.style.marginTop = "5px";
   enemyDisplay.appendChild(enemyTypeElem);
 
@@ -119,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
   passiveBtn.addEventListener("click", upgradePassive);
   shopContainer.appendChild(passiveBtn);
 
-  // --- Update Score Every Second ---
+  // --- Update the Score Every Second ---
   setInterval(() => {
     score += increment;
     scoreDisplay.innerText = "Score: " + score;
@@ -132,11 +126,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // --- Function: Spawn a New Enemy ---
   function spawnEnemy() {
-    enemyHP = 100;
+    enemyHP = 100.00;
     // Randomly pick an enemy elemental type
     const elementOptions = Object.keys(elements);
     enemyType = elementOptions[Math.floor(Math.random() * elementOptions.length)];
-    enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
+    enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
     enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
     // Clear damage display on spawn
     damageDisplay.innerText = "";
@@ -147,7 +141,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function attackEnemy() {
     let baseDamage = elements[enemyType] || 0;
     let bonusDamage = baseDamage * weaknessMultiplier[enemyType];
-    let totalDamage = Math.floor(baseDamage + bonusDamage);
+    // Calculate total damage as a decimal rounded to two places.
+    let totalDamage = parseFloat((baseDamage + bonusDamage).toFixed(2));
 
     enemyHP -= totalDamage;
     animateDamage(totalDamage);
@@ -157,16 +152,17 @@ document.addEventListener("DOMContentLoaded", function () {
       spawnEnemy();
       return;
     }
-    enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
+    enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
   }
 
   // --- Function: Animate Damage Flash ---
-  // Uses CSS keyframe animation to smoothly transition the color.
+  // Uses CSS keyframe animation for a smooth flash from gray to white and back.
   function animateDamage(newDamage) {
-    damageDisplay.innerText = `(-${newDamage})`;
-    // Remove the flash class if it exists to restart the animation.
+    // Set the damage text with brackets.
+    damageDisplay.innerText = `(-${newDamage.toFixed(2)})`;
+    // Remove the flash class if it exists (to reset the animation).
     damageDisplay.classList.remove("flash");
-    // Force reflow so the removal takes effect.
+    // Force reflow to reset the animation.
     void damageDisplay.offsetWidth;
     // Add the flash class to trigger the animation.
     damageDisplay.classList.add("flash");
@@ -200,6 +196,18 @@ document.addEventListener("DOMContentLoaded", function () {
       alert("Not enough score for passive upgrade!");
     }
   }
+
+  // --- Save Data as a Cookie (Optional) ---
+  // A simple function to set a cookie. You can call saveGame() periodically.
+  function saveGame() {
+    // For example, save score and enemyHP.
+    document.cookie = "score=" + score + "; path=/";
+    document.cookie = "enemyHP=" + enemyHP.toFixed(2) + "; path=/";
+    console.log("Game saved in cookies.");
+  }
+  
+  // Example: Save game every 10 seconds.
+  setInterval(saveGame, 10000);
 
   // --- Initialize the Game ---
   spawnEnemy();
