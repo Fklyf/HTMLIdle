@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Inject CSS for the flash animation using keyframes.
+  // Inject CSS for a smooth flash animation.
   const style = document.createElement("style");
   style.innerHTML = `
     @keyframes flashAnimation {
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Basic Game Variables ---
   let score = 0;
   let increment = 1;
-  let enemyHP = 100.00;  // keep as a float
+  let enemyHP = 100.00;  // float value
   let enemyType = "None";
   
   // --- Elemental Damage & Upgrade Variables ---
@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "Fire": 20,
     "Ice": 20
   };
-  // Weakness multipliers: extra damage taken by enemy
+  // Weakness multipliers (extra damage taken by enemy)
   const weaknessMultiplier = {
     "Chaos": 1.0,
     "Shock": 1.0,
@@ -67,24 +67,29 @@ document.addEventListener("DOMContentLoaded", function () {
   enemyDisplay.style.fontSize = "20px";
   gameContainer.appendChild(enemyDisplay);
 
-  // Enemy HP Element (on its own line)
-  const enemyHPElem = document.createElement("div");
+  // Container for Enemy HP and Damage (on the same line)
+  const enemyInfo = document.createElement("div");
+  enemyInfo.style.display = "inline-flex";
+  enemyInfo.style.alignItems = "baseline";
+  enemyDisplay.appendChild(enemyInfo);
+
+  // Enemy HP Element (inline)
+  const enemyHPElem = document.createElement("span");
   enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
-  enemyDisplay.appendChild(enemyHPElem);
+  enemyInfo.appendChild(enemyHPElem);
 
-  // Damage Display (on a new line, with brackets)
-  const damageDisplay = document.createElement("div");
-  damageDisplay.style.marginTop = "5px";
-  damageDisplay.style.display = "block";
+  // Damage Display (inline, with margin-left)
+  const damageDisplay = document.createElement("span");
+  damageDisplay.style.marginLeft = "10px";
   damageDisplay.style.color = "#AAAAAA"; // initial gray
-  enemyDisplay.appendChild(damageDisplay);
+  enemyInfo.appendChild(damageDisplay);
 
-  // Enemy Type Display (on its own line)
+  // Enemy Type Display (on a new line)
   const enemyTypeElem = document.createElement("div");
   enemyTypeElem.style.marginTop = "5px";
   enemyDisplay.appendChild(enemyTypeElem);
 
-  // Shop container for upgrade buttons
+  // Shop container for upgrade buttons and controls
   const shopContainer = document.createElement("div");
   shopContainer.style.display = "flex";
   shopContainer.style.flexDirection = "column";
@@ -111,6 +116,25 @@ document.addEventListener("DOMContentLoaded", function () {
   passiveBtn.addEventListener("click", upgradePassive);
   shopContainer.appendChild(passiveBtn);
 
+  // --- Create Save, Load, and Copy buttons ---
+  const saveButton = document.createElement("button");
+  saveButton.style.fontSize = "16px";
+  saveButton.innerText = "Save Game";
+  saveButton.addEventListener("click", saveGameState);
+  shopContainer.appendChild(saveButton);
+
+  const loadButton = document.createElement("button");
+  loadButton.style.fontSize = "16px";
+  loadButton.innerText = "Load Game";
+  loadButton.addEventListener("click", loadGameState);
+  shopContainer.appendChild(loadButton);
+
+  const copyButton = document.createElement("button");
+  copyButton.style.fontSize = "16px";
+  copyButton.innerText = "Copy State to Clipboard";
+  copyButton.addEventListener("click", copyStateToClipboard);
+  shopContainer.appendChild(copyButton);
+
   // --- Update the Score Every Second ---
   setInterval(() => {
     score += increment;
@@ -129,7 +153,6 @@ document.addEventListener("DOMContentLoaded", function () {
     enemyType = elementOptions[Math.floor(Math.random() * elementOptions.length)];
     enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
     enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
-    // Clear the damage display on spawn
     damageDisplay.innerText = "";
     damageDisplay.classList.remove("flash");
   }
@@ -138,14 +161,13 @@ document.addEventListener("DOMContentLoaded", function () {
   function attackEnemy() {
     let baseDamage = elements[enemyType] || 0;
     let bonusDamage = baseDamage * weaknessMultiplier[enemyType];
-    // Calculate total damage and round to two decimals
     let totalDamage = parseFloat((baseDamage + bonusDamage).toFixed(2));
     
     enemyHP -= totalDamage;
     animateDamage(totalDamage);
 
     if (enemyHP <= 0) {
-      score += 100; // reward for defeating enemy
+      score += 100;
       spawnEnemy();
       return;
     }
@@ -153,12 +175,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Function: Animate Damage Flash ---
-  // Uses a CSS keyframe animation to flash the damage from gray to white and back.
   function animateDamage(newDamage) {
-    // Set the damage text with two decimals in brackets.
     damageDisplay.innerText = `(-${newDamage.toFixed(2)})`;
     damageDisplay.classList.remove("flash");
-    // Force reflow to restart the animation
     void damageDisplay.offsetWidth;
     damageDisplay.classList.add("flash");
   }
@@ -190,14 +209,55 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // --- Save Data as Cookies ---
-  function saveGame() {
-    document.cookie = "score=" + score + "; path=/";
-    document.cookie = "enemyHP=" + enemyHP.toFixed(2) + "; path=/";
-    console.log("Game saved in cookies.");
+  // --- Function: Save Game State using localStorage ---
+  function saveGameState() {
+    const gameState = {
+      score: score,
+      enemyHP: enemyHP,
+      elements: elements,
+      elementUpgradeCost: elementUpgradeCost,
+      weaknessMultiplier: weaknessMultiplier
+    };
+    localStorage.setItem("gameState", JSON.stringify(gameState));
+    console.log("Game state saved.");
   }
-  // Example: Save game every 10 seconds.
-  setInterval(saveGame, 10000);
+
+  // --- Function: Load Game State from localStorage ---
+  function loadGameState() {
+    const savedState = localStorage.getItem("gameState");
+    if (savedState) {
+      const gameState = JSON.parse(savedState);
+      score = gameState.score;
+      enemyHP = gameState.enemyHP;
+      Object.assign(elements, gameState.elements);
+      Object.assign(elementUpgradeCost, gameState.elementUpgradeCost);
+      Object.assign(weaknessMultiplier, gameState.weaknessMultiplier);
+      scoreDisplay.innerText = "Score: " + score;
+      enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
+      console.log("Game state loaded.");
+    } else {
+      console.log("No saved game state found.");
+    }
+  }
+
+  // --- Function: Get a Simple State String ---
+  // Returns a compact string such as "hp100.00score200chaos1shock1fire1ice1"
+  function getStateString() {
+    return "hp" + enemyHP.toFixed(2) +
+           "score" + score +
+           "chaos" + elements.Chaos +
+           "shock" + elements.Shock +
+           "fire" + elements.Fire +
+           "ice" + elements.Ice;
+  }
+
+  // --- Function: Copy State String to Clipboard ---
+  function copyStateToClipboard() {
+    const stateString = getStateString();
+    navigator.clipboard.writeText(stateString)
+      .then(() => { console.log("Copied state: " + stateString); })
+      .catch(err => { console.error("Copy failed: ", err); });
+  }
 
   // --- Initialize the Game ---
   spawnEnemy();
