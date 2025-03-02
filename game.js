@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Inject CSS for the flash animation.
+  // Inject CSS for the flash animation using keyframes.
   const style = document.createElement("style");
   style.innerHTML = `
     @keyframes flashAnimation {
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Basic Game Variables ---
   let score = 0;
   let increment = 1;
-  let enemyHP = 100.00;
+  let enemyHP = 100.00;  // keep as a float
   let enemyType = "None";
   
   // --- Elemental Damage & Upgrade Variables ---
@@ -72,13 +72,11 @@ document.addEventListener("DOMContentLoaded", function () {
   enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
   enemyDisplay.appendChild(enemyHPElem);
 
-  // Damage Display (on a new line with brackets)
+  // Damage Display (on a new line, with brackets)
   const damageDisplay = document.createElement("div");
   damageDisplay.style.marginTop = "5px";
-  damageDisplay.style.color = "#AAAAAA"; // initial gray
-  // Make sure it's a block element so it appears on its own line.
   damageDisplay.style.display = "block";
-  // Set up the CSS transition via the injected flash class.
+  damageDisplay.style.color = "#AAAAAA"; // initial gray
   enemyDisplay.appendChild(damageDisplay);
 
   // Enemy Type Display (on its own line)
@@ -127,12 +125,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Function: Spawn a New Enemy ---
   function spawnEnemy() {
     enemyHP = 100.00;
-    // Randomly pick an enemy elemental type
     const elementOptions = Object.keys(elements);
     enemyType = elementOptions[Math.floor(Math.random() * elementOptions.length)];
     enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
     enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
-    // Clear damage display on spawn
+    // Clear the damage display on spawn
     damageDisplay.innerText = "";
     damageDisplay.classList.remove("flash");
   }
@@ -141,9 +138,9 @@ document.addEventListener("DOMContentLoaded", function () {
   function attackEnemy() {
     let baseDamage = elements[enemyType] || 0;
     let bonusDamage = baseDamage * weaknessMultiplier[enemyType];
-    // Calculate total damage as a decimal rounded to two places.
+    // Calculate total damage and round to two decimals
     let totalDamage = parseFloat((baseDamage + bonusDamage).toFixed(2));
-
+    
     enemyHP -= totalDamage;
     animateDamage(totalDamage);
 
@@ -156,15 +153,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Function: Animate Damage Flash ---
-  // Uses CSS keyframe animation for a smooth flash from gray to white and back.
+  // Uses a CSS keyframe animation to flash the damage from gray to white and back.
   function animateDamage(newDamage) {
-    // Set the damage text with brackets.
+    // Set the damage text with two decimals in brackets.
     damageDisplay.innerText = `(-${newDamage.toFixed(2)})`;
-    // Remove the flash class if it exists (to reset the animation).
     damageDisplay.classList.remove("flash");
-    // Force reflow to reset the animation.
+    // Force reflow to restart the animation
     void damageDisplay.offsetWidth;
-    // Add the flash class to trigger the animation.
     damageDisplay.classList.add("flash");
   }
 
@@ -177,7 +172,6 @@ document.addEventListener("DOMContentLoaded", function () {
       elementUpgradeCost[element] = Math.floor(cost * 1.5);
       upgradeButtons[element].innerText = `Upgrade ${element} (Cost: ${elementUpgradeCost[element]})`;
       scoreDisplay.innerText = "Score: " + score;
-      console.log(`${element} damage upgraded to ${elements[element]}!`);
     } else {
       alert("Not enough score for this upgrade!");
     }
@@ -191,21 +185,17 @@ document.addEventListener("DOMContentLoaded", function () {
         weaknessMultiplier[element] += 0.05;
       }
       scoreDisplay.innerText = "Score: " + score;
-      console.log("Passive upgrade purchased: All weakness multipliers increased by 0.05!");
     } else {
       alert("Not enough score for passive upgrade!");
     }
   }
 
-  // --- Save Data as a Cookie (Optional) ---
-  // A simple function to set a cookie. You can call saveGame() periodically.
+  // --- Save Data as Cookies ---
   function saveGame() {
-    // For example, save score and enemyHP.
     document.cookie = "score=" + score + "; path=/";
     document.cookie = "enemyHP=" + enemyHP.toFixed(2) + "; path=/";
     console.log("Game saved in cookies.");
   }
-  
   // Example: Save game every 10 seconds.
   setInterval(saveGame, 10000);
 
