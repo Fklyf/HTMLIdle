@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "Fire": 20,
     "Ice": 20
   };
-  // Weakness multiplier for enemy taking extra damage.
+  // Weakness multipliers (extra damage taken by enemy)
   const weaknessMultiplier = {
     "Chaos": 1.0,
     "Shock": 1.0,
@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
   };
   const passiveUpgradeCost = 50; // fixed cost for passive upgrade
 
-  // --- Color Mapping for Enemy Type ---
+  // --- Color Mapping for Enemy Element Types ---
   const elementColors = {
     "Chaos": "#800080", // purple
     "Shock": "#0000FF", // blue
@@ -48,10 +48,36 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Enemy Display Container
   const enemyDisplay = document.createElement("div");
-  enemyDisplay.style.fontSize = "20px";
-  enemyDisplay.style.color = "#FFFFFF";
   enemyDisplay.style.marginBottom = "20px";
   gameContainer.appendChild(enemyDisplay);
+
+  // Enemy HP Element
+  const enemyHPElem = document.createElement("div");
+  enemyHPElem.style.fontSize = "20px";
+  enemyHPElem.style.color = "#FFFFFF";
+  enemyDisplay.appendChild(enemyHPElem);
+
+  // Enemy Type Element
+  const enemyTypeElem = document.createElement("div");
+  enemyTypeElem.style.fontSize = "20px";
+  enemyTypeElem.style.marginBottom = "10px";
+  enemyDisplay.appendChild(enemyTypeElem);
+
+  // Damage Display Container
+  // Contains two parts: currentDamageElem (animated) and previousDamageElem (gray, static)
+  const damageContainer = document.createElement("div");
+  damageContainer.style.fontSize = "18px";
+  // We'll leave the container color to inherit (white for current, gray for previous)
+  enemyDisplay.appendChild(damageContainer);
+
+  const currentDamageElem = document.createElement("div");
+  currentDamageElem.style.color = "#FFFFFF";
+  currentDamageElem.style.transition = "transform 0.5s ease";
+  damageContainer.appendChild(currentDamageElem);
+
+  const previousDamageElem = document.createElement("div");
+  previousDamageElem.style.color = "#AAAAAA"; // gray for previous damage
+  damageContainer.appendChild(previousDamageElem);
 
   // Shop container for upgrade buttons
   const shopContainer = document.createElement("div");
@@ -80,7 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
   passiveBtn.addEventListener("click", upgradePassive);
   shopContainer.appendChild(passiveBtn);
 
-  // --- Update the Score Every Second ---
+  // --- Update Score Every Second ---
   setInterval(() => {
     score += increment;
     scoreDisplay.innerText = "Score: " + score;
@@ -97,42 +123,53 @@ document.addEventListener("DOMContentLoaded", function () {
     // Randomly pick an enemy elemental type
     const elementOptions = Object.keys(elements);
     enemyType = elementOptions[Math.floor(Math.random() * elementOptions.length)];
-    updateEnemyDisplay(0); // no damage text on spawn
+    enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
+    enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
+    // Clear damage displays on spawn
+    currentDamageElem.innerText = "";
+    previousDamageElem.innerText = "";
   }
 
   // --- Function: Attack the Enemy ---
   function attackEnemy() {
     // Calculate damage based on enemy type:
-    // If enemyType is valid, use its base damage plus bonus from weakness multiplier.
     let baseDamage = elements[enemyType] || 0;
     let bonusDamage = baseDamage * weaknessMultiplier[enemyType];
     let totalDamage = Math.floor(baseDamage + bonusDamage);
 
     enemyHP -= totalDamage;
 
-    // Prepare damage text (in white, in brackets)
-    const damageText = `(-${totalDamage})`;
+    // Animate the damage display (if damage > 0)
+    animateDamage(totalDamage);
 
     // Check if enemy is defeated
     if (enemyHP <= 0) {
-      score += 100; // reward for defeating enemy
+      score += 100; // reward score
       spawnEnemy();
-      updateEnemyDisplay(0);
       return;
     }
-    updateEnemyDisplay(totalDamage);
+    enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
   }
 
-  // --- Function: Update Enemy Display ---
-  function updateEnemyDisplay(damageInflicted) {
-    // Construct enemy HP display with damage in brackets.
-    // HP text and damage text will be white.
-    let hpText = `Enemy HP: ${enemyHP}`;
-    if (damageInflicted > 0) {
-      hpText += ` ${"(" + "-" + damageInflicted + ")"}`
-    }
-    // Element type display: label in white but element name in its color.
-    enemyDisplay.innerHTML = `${hpText}<br>Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
+  // --- Function: Animate Damage Display ---
+  function animateDamage(damage) {
+    if (damage <= 0) return;
+    
+    // Set current damage text in white with brackets
+    currentDamageElem.innerText = `(-${damage})`;
+    // Reset transform for a fresh animation
+    currentDamageElem.style.transform = "translateY(0)";
+    // Force reflow (optional)
+    void currentDamageElem.offsetWidth;
+    // Trigger the animation: slide down 20px over 0.5 seconds
+    currentDamageElem.style.transform = "translateY(20px)";
+    
+    // After animation completes, move current damage to previous damage display (in gray) and clear current
+    setTimeout(() => {
+      previousDamageElem.innerText = currentDamageElem.innerText;
+      currentDamageElem.innerText = "";
+      currentDamageElem.style.transform = "translateY(0)";
+    }, 500);
   }
 
   // --- Function: Upgrade an Element's Damage ---
@@ -143,7 +180,6 @@ document.addEventListener("DOMContentLoaded", function () {
       elements[element] += 1;
       // Increase cost by 50% (rounded)
       elementUpgradeCost[element] = Math.floor(cost * 1.5);
-      // Update button text
       upgradeButtons[element].innerText = `Upgrade ${element} (Cost: ${elementUpgradeCost[element]})`;
       scoreDisplay.innerText = "Score: " + score;
       console.log(`${element} damage upgraded to ${elements[element]}!`);
