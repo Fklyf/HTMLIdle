@@ -63,25 +63,11 @@ document.addEventListener("DOMContentLoaded", function () {
   enemyTypeElem.style.marginBottom = "10px";
   enemyDisplay.appendChild(enemyTypeElem);
 
-  // Damage Display Container – contains two spans:
-  // currentDamageElem (white) and previousDamageElem (gray)
-  const damageContainer = document.createElement("div");
-  damageContainer.style.fontSize = "18px";
-  damageContainer.style.position = "relative";  // for positioning if needed
-  enemyDisplay.appendChild(damageContainer);
-
-  const currentDamageElem = document.createElement("span");
-  currentDamageElem.style.color = "#FFFFFF";
-  currentDamageElem.style.display = "inline-block";
-  // Set up a transition for the transform property:
-  currentDamageElem.style.transition = "transform 0.5s ease";
-  damageContainer.appendChild(currentDamageElem);
-
-  const previousDamageElem = document.createElement("span");
-  previousDamageElem.style.color = "#AAAAAA"; // gray for previous damage
-  previousDamageElem.style.display = "inline-block";
-  previousDamageElem.style.marginLeft = "10px";
-  damageContainer.appendChild(previousDamageElem);
+  // Damage Display – single element used for flashing effect
+  const damageDisplay = document.createElement("div");
+  damageDisplay.style.fontSize = "18px";
+  damageDisplay.style.color = "#AAAAAA"; // initial gray
+  enemyDisplay.appendChild(damageDisplay);
 
   // Shop container for upgrade buttons
   const shopContainer = document.createElement("div");
@@ -129,10 +115,8 @@ document.addEventListener("DOMContentLoaded", function () {
     enemyType = elementOptions[Math.floor(Math.random() * elementOptions.length)];
     enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
     enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
-    // Clear previous damage displays
-    currentDamageElem.innerText = "";
-    currentDamageElem.style.transform = "translateY(0)";
-    previousDamageElem.innerText = "";
+    // Clear damage display on spawn
+    damageDisplay.innerText = "";
   }
 
   // --- Function: Attack the Enemy ---
@@ -146,28 +130,30 @@ document.addEventListener("DOMContentLoaded", function () {
     animateDamage(totalDamage);
 
     if (enemyHP <= 0) {
-      score += 100; // reward score for defeating enemy
+      score += 100; // reward for defeating enemy
       spawnEnemy();
       return;
     }
     enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
   }
 
-  // --- Function: Animate Damage Display ---
-  // This function will slide the new damage in from above.
+  // --- Function: Animate Damage Flash ---
+  // This function will flash the damage number from gray to white and back.
   function animateDamage(newDamage) {
-    // If there's an existing current damage, immediately update previous damage
-    if (currentDamageElem.innerText !== "") {
-      previousDamageElem.innerText = currentDamageElem.innerText;
-    }
-    // Set new damage text in current damage element
-    currentDamageElem.innerText = `(-${newDamage})`;
-    // Start with current damage positioned above (simulate slide-in from above)
-    currentDamageElem.style.transform = "translateY(-20px)";
-    // Force reflow to ensure the starting position is applied
-    void currentDamageElem.offsetWidth;
-    // Animate the current damage into its resting position
-    currentDamageElem.style.transform = "translateY(0)";
+    // Set the damage text
+    damageDisplay.innerText = `(-${newDamage})`;
+    // Start with gray
+    damageDisplay.style.color = "#AAAAAA";
+    
+    // After 200ms, change to white
+    setTimeout(() => {
+      damageDisplay.style.color = "#FFFFFF";
+    }, 200);
+    
+    // After 800ms, change back to gray (or you can keep it white as needed)
+    setTimeout(() => {
+      damageDisplay.style.color = "#AAAAAA";
+    }, 800);
   }
 
   // --- Function: Upgrade an Element's Damage ---
