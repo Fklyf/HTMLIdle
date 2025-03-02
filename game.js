@@ -51,23 +51,30 @@ document.addEventListener("DOMContentLoaded", function () {
   enemyDisplay.style.marginBottom = "20px";
   gameContainer.appendChild(enemyDisplay);
 
-  // Enemy HP Element
-  const enemyHPElem = document.createElement("div");
-  enemyHPElem.style.fontSize = "20px";
-  enemyHPElem.style.color = "#FFFFFF";
-  enemyDisplay.appendChild(enemyHPElem);
+  // Container for Enemy HP & Damage (inline)
+  const enemyInfo = document.createElement("div");
+  enemyInfo.style.fontSize = "20px";
+  enemyInfo.style.color = "#FFFFFF";
+  enemyDisplay.appendChild(enemyInfo);
+  
+  // We'll show enemy HP and then append the damage as an inline span.
+  const enemyHPElem = document.createElement("span");
+  enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
+  enemyInfo.appendChild(enemyHPElem);
 
-  // Enemy Type Element
+  // Damage Display as an inline element (with margin-left for spacing)
+  const damageDisplay = document.createElement("span");
+  damageDisplay.style.marginLeft = "10px";
+  damageDisplay.style.color = "#AAAAAA"; // start in gray
+  // Set a smooth transition for the color property.
+  damageDisplay.style.transition = "color 0.5s ease";
+  enemyInfo.appendChild(damageDisplay);
+
+  // Enemy Type Display (below HP)
   const enemyTypeElem = document.createElement("div");
   enemyTypeElem.style.fontSize = "20px";
-  enemyTypeElem.style.marginBottom = "10px";
+  enemyTypeElem.style.marginTop = "5px";
   enemyDisplay.appendChild(enemyTypeElem);
-
-  // Damage Display – single element used for flashing effect
-  const damageDisplay = document.createElement("div");
-  damageDisplay.style.fontSize = "18px";
-  damageDisplay.style.color = "#AAAAAA"; // initial gray
-  enemyDisplay.appendChild(damageDisplay);
 
   // Shop container for upgrade buttons
   const shopContainer = document.createElement("div");
@@ -121,7 +128,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // --- Function: Attack the Enemy ---
   function attackEnemy() {
-    // Calculate damage based on enemy type:
     let baseDamage = elements[enemyType] || 0;
     let bonusDamage = baseDamage * weaknessMultiplier[enemyType];
     let totalDamage = Math.floor(baseDamage + bonusDamage);
@@ -138,22 +144,19 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Function: Animate Damage Flash ---
-  // This function will flash the damage number from gray to white and back.
+  // The damage value flashes: it starts in gray, transitions smoothly to white, then back to gray.
   function animateDamage(newDamage) {
-    // Set the damage text
     damageDisplay.innerText = `(-${newDamage})`;
     // Start with gray
     damageDisplay.style.color = "#AAAAAA";
-    
-    // After 200ms, change to white
+    // After a short delay, set to white; CSS transition will smooth the change.
     setTimeout(() => {
       damageDisplay.style.color = "#FFFFFF";
-    }, 200);
-    
-    // After 800ms, change back to gray (or you can keep it white as needed)
+    }, 100);
+    // Then after another delay, transition back to gray.
     setTimeout(() => {
       damageDisplay.style.color = "#AAAAAA";
-    }, 800);
+    }, 600);
   }
 
   // --- Function: Upgrade an Element's Damage ---
