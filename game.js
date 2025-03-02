@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
   passiveBtn.addEventListener("click", upgradePassive);
   shopContainer.appendChild(passiveBtn);
 
-  // --- Create Save, Load, and Copy buttons ---
+  // --- Create Save, Load, and Copy Buttons ---
   const saveButton = document.createElement("button");
   saveButton.style.fontSize = "16px";
   saveButton.innerText = "Save Game";
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const loadButton = document.createElement("button");
   loadButton.style.fontSize = "16px";
-  loadButton.innerText = "Load Game";
+  loadButton.innerText = "Load Game (From localStorage)";
   loadButton.addEventListener("click", loadGameState);
   shopContainer.appendChild(loadButton);
 
@@ -134,6 +134,21 @@ document.addEventListener("DOMContentLoaded", function () {
   copyButton.innerText = "Copy State to Clipboard";
   copyButton.addEventListener("click", copyStateToClipboard);
   shopContainer.appendChild(copyButton);
+
+  // --- Create Input Field and Button for Loading from a String ---
+  const stateInput = document.createElement("input");
+  stateInput.type = "text";
+  stateInput.placeholder = "Paste state string here";
+  stateInput.style.fontSize = "16px";
+  shopContainer.appendChild(stateInput);
+
+  const loadStringButton = document.createElement("button");
+  loadStringButton.style.fontSize = "16px";
+  loadStringButton.innerText = "Load Game (From String)";
+  loadStringButton.addEventListener("click", function () {
+    loadGameStateFromString(stateInput.value);
+  });
+  shopContainer.appendChild(loadStringButton);
 
   // --- Update the Score Every Second ---
   setInterval(() => {
@@ -241,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Function: Get a Simple State String ---
-  // Returns a compact string such as "hp100.00score200chaos1shock1fire1ice1"
+  // Returns a string like "hp100.00score200chaos1shock1fire1ice1"
   function getStateString() {
     return "hp" + enemyHP.toFixed(2) +
            "score" + score +
@@ -259,7 +274,34 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(err => { console.error("Copy failed: ", err); });
   }
 
+  // --- Function: Load Game State from a String ---
+  // Expects a string formatted as "hp{enemyHP}score{score}chaos{chaos}shock{shock}fire{fire}ice{ice}"
+  function loadGameStateFromString(stateString) {
+    const enemyHPMatch = stateString.match(/hp([\d.]+)/);
+    const scoreMatch = stateString.match(/score(\d+)/);
+    const chaosMatch = stateString.match(/chaos(\d+)/);
+    const shockMatch = stateString.match(/shock(\d+)/);
+    const fireMatch = stateString.match(/fire(\d+)/);
+    const iceMatch = stateString.match(/ice(\d+)/);
+    
+    if (enemyHPMatch && scoreMatch && chaosMatch && shockMatch && fireMatch && iceMatch) {
+      enemyHP = parseFloat(enemyHPMatch[1]);
+      score = parseInt(scoreMatch[1]);
+      elements.Chaos = parseInt(chaosMatch[1]);
+      elements.Shock = parseInt(shockMatch[1]);
+      elements.Fire = parseInt(fireMatch[1]);
+      elements.Ice = parseInt(iceMatch[1]);
+      
+      // Update UI elements.
+      scoreDisplay.innerText = "Score: " + score;
+      enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
+      console.log("Game state loaded from string!");
+    } else {
+      alert("Invalid game state string!");
+    }
+  }
+
   // --- Initialize the Game ---
   spawnEnemy();
   console.log("Game initialized. Ready to expand!");
-})
+});
