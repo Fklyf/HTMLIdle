@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "Fire": 20,
     "Ice": 20
   };
-  // Weakness multipliers (extra damage taken by enemy)
+  // Weakness multipliers: extra damage taken by enemy
   const weaknessMultiplier = {
     "Chaos": 1.0,
     "Shock": 1.0,
@@ -63,20 +63,24 @@ document.addEventListener("DOMContentLoaded", function () {
   enemyTypeElem.style.marginBottom = "10px";
   enemyDisplay.appendChild(enemyTypeElem);
 
-  // Damage Display Container
-  // Contains two parts: currentDamageElem (animated) and previousDamageElem (gray, static)
+  // Damage Display Container – contains two spans:
+  // currentDamageElem (white) and previousDamageElem (gray)
   const damageContainer = document.createElement("div");
   damageContainer.style.fontSize = "18px";
-  // We'll leave the container color to inherit (white for current, gray for previous)
+  damageContainer.style.position = "relative";  // for positioning if needed
   enemyDisplay.appendChild(damageContainer);
 
-  const currentDamageElem = document.createElement("div");
+  const currentDamageElem = document.createElement("span");
   currentDamageElem.style.color = "#FFFFFF";
+  currentDamageElem.style.display = "inline-block";
+  // Set up a transition for the transform property:
   currentDamageElem.style.transition = "transform 0.5s ease";
   damageContainer.appendChild(currentDamageElem);
 
-  const previousDamageElem = document.createElement("div");
+  const previousDamageElem = document.createElement("span");
   previousDamageElem.style.color = "#AAAAAA"; // gray for previous damage
+  previousDamageElem.style.display = "inline-block";
+  previousDamageElem.style.marginLeft = "10px";
   damageContainer.appendChild(previousDamageElem);
 
   // Shop container for upgrade buttons
@@ -106,13 +110,13 @@ document.addEventListener("DOMContentLoaded", function () {
   passiveBtn.addEventListener("click", upgradePassive);
   shopContainer.appendChild(passiveBtn);
 
-  // --- Update Score Every Second ---
+  // --- Update the Score Every Second ---
   setInterval(() => {
     score += increment;
     scoreDisplay.innerText = "Score: " + score;
   }, 1000);
 
-  // --- Attack Enemy Every 2 Seconds ---
+  // --- Attack the Enemy Every 2 Seconds ---
   setInterval(() => {
     attackEnemy();
   }, 2000);
@@ -125,8 +129,9 @@ document.addEventListener("DOMContentLoaded", function () {
     enemyType = elementOptions[Math.floor(Math.random() * elementOptions.length)];
     enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
     enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
-    // Clear damage displays on spawn
+    // Clear previous damage displays
     currentDamageElem.innerText = "";
+    currentDamageElem.style.transform = "translateY(0)";
     previousDamageElem.innerText = "";
   }
 
@@ -138,13 +143,10 @@ document.addEventListener("DOMContentLoaded", function () {
     let totalDamage = Math.floor(baseDamage + bonusDamage);
 
     enemyHP -= totalDamage;
-
-    // Animate the damage display (if damage > 0)
     animateDamage(totalDamage);
 
-    // Check if enemy is defeated
     if (enemyHP <= 0) {
-      score += 100; // reward score
+      score += 100; // reward score for defeating enemy
       spawnEnemy();
       return;
     }
@@ -152,24 +154,20 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Function: Animate Damage Display ---
-  function animateDamage(damage) {
-    if (damage <= 0) return;
-    
-    // Set current damage text in white with brackets
-    currentDamageElem.innerText = `(-${damage})`;
-    // Reset transform for a fresh animation
-    currentDamageElem.style.transform = "translateY(0)";
-    // Force reflow (optional)
-    void currentDamageElem.offsetWidth;
-    // Trigger the animation: slide down 20px over 0.5 seconds
-    currentDamageElem.style.transform = "translateY(20px)";
-    
-    // After animation completes, move current damage to previous damage display (in gray) and clear current
-    setTimeout(() => {
+  // This function will slide the new damage in from above.
+  function animateDamage(newDamage) {
+    // If there's an existing current damage, immediately update previous damage
+    if (currentDamageElem.innerText !== "") {
       previousDamageElem.innerText = currentDamageElem.innerText;
-      currentDamageElem.innerText = "";
-      currentDamageElem.style.transform = "translateY(0)";
-    }, 500);
+    }
+    // Set new damage text in current damage element
+    currentDamageElem.innerText = `(-${newDamage})`;
+    // Start with current damage positioned above (simulate slide-in from above)
+    currentDamageElem.style.transform = "translateY(-20px)";
+    // Force reflow to ensure the starting position is applied
+    void currentDamageElem.offsetWidth;
+    // Animate the current damage into its resting position
+    currentDamageElem.style.transform = "translateY(0)";
   }
 
   // --- Function: Upgrade an Element's Damage ---
@@ -178,7 +176,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (score >= cost) {
       score -= cost;
       elements[element] += 1;
-      // Increase cost by 50% (rounded)
       elementUpgradeCost[element] = Math.floor(cost * 1.5);
       upgradeButtons[element].innerText = `Upgrade ${element} (Cost: ${elementUpgradeCost[element]})`;
       scoreDisplay.innerText = "Score: " + score;
@@ -192,7 +189,6 @@ document.addEventListener("DOMContentLoaded", function () {
   function upgradePassive() {
     if (score >= passiveUpgradeCost) {
       score -= passiveUpgradeCost;
-      // Increase each weakness multiplier by 0.05
       for (const element in weaknessMultiplier) {
         weaknessMultiplier[element] += 0.05;
       }
