@@ -1,4 +1,18 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Inject CSS for the flash animation
+  const style = document.createElement("style");
+  style.innerHTML = `
+    @keyframes flashAnimation {
+      0% { color: #AAAAAA; }
+      50% { color: #FFFFFF; }
+      100% { color: #AAAAAA; }
+    }
+    .flash {
+      animation: flashAnimation 0.5s ease;
+    }
+  `;
+  document.head.appendChild(style);
+
   // --- Basic Game Variables ---
   let score = 0;
   let increment = 1;
@@ -55,19 +69,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const enemyInfo = document.createElement("div");
   enemyInfo.style.fontSize = "20px";
   enemyInfo.style.color = "#FFFFFF";
+  // Ensure inline display for contained spans
+  enemyInfo.style.display = "inline";
   enemyDisplay.appendChild(enemyInfo);
   
-  // We'll show enemy HP and then append the damage as an inline span.
+  // Enemy HP element as an inline span
   const enemyHPElem = document.createElement("span");
   enemyHPElem.innerText = `Enemy HP: ${enemyHP}`;
+  enemyHPElem.style.display = "inline";
   enemyInfo.appendChild(enemyHPElem);
 
-  // Damage Display as an inline element (with margin-left for spacing)
+  // Damage Display as an inline span (with margin-left)
   const damageDisplay = document.createElement("span");
   damageDisplay.style.marginLeft = "10px";
-  damageDisplay.style.color = "#AAAAAA"; // start in gray
-  // Set a smooth transition for the color property.
-  damageDisplay.style.transition = "color 0.5s ease";
+  damageDisplay.style.display = "inline";
+  damageDisplay.style.color = "#AAAAAA"; // initial gray
   enemyInfo.appendChild(damageDisplay);
 
   // Enemy Type Display (below HP)
@@ -103,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
   passiveBtn.addEventListener("click", upgradePassive);
   shopContainer.appendChild(passiveBtn);
 
-  // --- Update the Score Every Second ---
+  // --- Update Score Every Second ---
   setInterval(() => {
     score += increment;
     scoreDisplay.innerText = "Score: " + score;
@@ -124,6 +140,7 @@ document.addEventListener("DOMContentLoaded", function () {
     enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
     // Clear damage display on spawn
     damageDisplay.innerText = "";
+    damageDisplay.classList.remove("flash");
   }
 
   // --- Function: Attack the Enemy ---
@@ -144,19 +161,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Function: Animate Damage Flash ---
-  // The damage value flashes: it starts in gray, transitions smoothly to white, then back to gray.
+  // Uses CSS keyframe animation to smoothly transition the color.
   function animateDamage(newDamage) {
     damageDisplay.innerText = `(-${newDamage})`;
-    // Start with gray
-    damageDisplay.style.color = "#AAAAAA";
-    // After a short delay, set to white; CSS transition will smooth the change.
-    setTimeout(() => {
-      damageDisplay.style.color = "#FFFFFF";
-    }, 100);
-    // Then after another delay, transition back to gray.
-    setTimeout(() => {
-      damageDisplay.style.color = "#AAAAAA";
-    }, 600);
+    // Remove the flash class if it exists to restart the animation.
+    damageDisplay.classList.remove("flash");
+    // Force reflow so the removal takes effect.
+    void damageDisplay.offsetWidth;
+    // Add the flash class to trigger the animation.
+    damageDisplay.classList.add("flash");
   }
 
   // --- Function: Upgrade an Element's Damage ---
