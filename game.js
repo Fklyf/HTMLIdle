@@ -116,19 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
   passiveBtn.addEventListener("click", upgradePassive);
   shopContainer.appendChild(passiveBtn);
 
-  // --- Create Save, Load, and Copy Buttons ---
-  const saveButton = document.createElement("button");
-  saveButton.style.fontSize = "16px";
-  saveButton.innerText = "Save Game";
-  saveButton.addEventListener("click", saveGameState);
-  shopContainer.appendChild(saveButton);
-
-  const loadButton = document.createElement("button");
-  loadButton.style.fontSize = "16px";
-  loadButton.innerText = "Load Game (From localStorage)";
-  loadButton.addEventListener("click", loadGameState);
-  shopContainer.appendChild(loadButton);
-
+  // --- Create Copy State Button ---
   const copyButton = document.createElement("button");
   copyButton.style.fontSize = "16px";
   copyButton.innerText = "Copy State to Clipboard";
@@ -224,46 +212,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // --- Function: Save Game State using localStorage ---
-  function saveGameState() {
-    const gameState = {
-      score: score,
-      enemyHP: enemyHP,
-      elements: elements,
-      elementUpgradeCost: elementUpgradeCost,
-      weaknessMultiplier: weaknessMultiplier
-    };
-    localStorage.setItem("gameState", JSON.stringify(gameState));
-    console.log("Game state saved.");
-  }
-
-  // --- Function: Load Game State from localStorage ---
-  function loadGameState() {
-    const savedState = localStorage.getItem("gameState");
-    if (savedState) {
-      const gameState = JSON.parse(savedState);
-      score = gameState.score;
-      enemyHP = gameState.enemyHP;
-      Object.assign(elements, gameState.elements);
-      Object.assign(elementUpgradeCost, gameState.elementUpgradeCost);
-      Object.assign(weaknessMultiplier, gameState.weaknessMultiplier);
-      scoreDisplay.innerText = "Score: " + score;
-      enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
-      console.log("Game state loaded.");
-    } else {
-      console.log("No saved game state found.");
-    }
-  }
-
-  // --- Function: Get a Simple State String ---
-  // Returns a string like "hp100.00score200chaos1shock1fire1ice1"
+  // --- Function: Get a Complete Game State String ---
+  // This function returns a compact string including all game details.
   function getStateString() {
     return "hp" + enemyHP.toFixed(2) +
            "score" + score +
+           "enemy" + enemyType +
            "chaos" + elements.Chaos +
            "shock" + elements.Shock +
            "fire" + elements.Fire +
-           "ice" + elements.Ice;
+           "ice" + elements.Ice +
+           "uCostChaos" + elementUpgradeCost.Chaos +
+           "uCostShock" + elementUpgradeCost.Shock +
+           "uCostFire" + elementUpgradeCost.Fire +
+           "uCostIce" + elementUpgradeCost.Ice +
+           "weakChaos" + weaknessMultiplier.Chaos.toFixed(2) +
+           "weakShock" + weaknessMultiplier.Shock.toFixed(2) +
+           "weakFire" + weaknessMultiplier.Fire.toFixed(2) +
+           "weakIce" + weaknessMultiplier.Ice.toFixed(2);
   }
 
   // --- Function: Copy State String to Clipboard ---
@@ -275,26 +241,56 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // --- Function: Load Game State from a String ---
-  // Expects a string formatted as "hp{enemyHP}score{score}chaos{chaos}shock{shock}fire{fire}ice{ice}"
+  // Expects a string formatted as:
+  // "hp{enemyHP}score{score}enemy{enemyType}chaos{chaos}shock{shock}fire{fire}ice{ice}uCostChaos{...}uCostShock{...}uCostFire{...}uCostIce{...}weakChaos{...}weakShock{...}weakFire{...}weakIce{...}"
   function loadGameStateFromString(stateString) {
     const enemyHPMatch = stateString.match(/hp([\d.]+)/);
     const scoreMatch = stateString.match(/score(\d+)/);
+    const enemyMatch = stateString.match(/enemy(\w+)/);
     const chaosMatch = stateString.match(/chaos(\d+)/);
     const shockMatch = stateString.match(/shock(\d+)/);
     const fireMatch = stateString.match(/fire(\d+)/);
     const iceMatch = stateString.match(/ice(\d+)/);
-    
-    if (enemyHPMatch && scoreMatch && chaosMatch && shockMatch && fireMatch && iceMatch) {
+    const uCostChaosMatch = stateString.match(/uCostChaos(\d+)/);
+    const uCostShockMatch = stateString.match(/uCostShock(\d+)/);
+    const uCostFireMatch = stateString.match(/uCostFire(\d+)/);
+    const uCostIceMatch = stateString.match(/uCostIce(\d+)/);
+    const weakChaosMatch = stateString.match(/weakChaos([\d.]+)/);
+    const weakShockMatch = stateString.match(/weakShock([\d.]+)/);
+    const weakFireMatch = stateString.match(/weakFire([\d.]+)/);
+    const weakIceMatch = stateString.match(/weakIce([\d.]+)/);
+
+    if (enemyHPMatch && scoreMatch && enemyMatch && chaosMatch && shockMatch &&
+        fireMatch && iceMatch && uCostChaosMatch && uCostShockMatch &&
+        uCostFireMatch && uCostIceMatch && weakChaosMatch && weakShockMatch &&
+        weakFireMatch && weakIceMatch) {
+
       enemyHP = parseFloat(enemyHPMatch[1]);
       score = parseInt(scoreMatch[1]);
+      enemyType = enemyMatch[1];
       elements.Chaos = parseInt(chaosMatch[1]);
       elements.Shock = parseInt(shockMatch[1]);
       elements.Fire = parseInt(fireMatch[1]);
       elements.Ice = parseInt(iceMatch[1]);
-      
+      elementUpgradeCost.Chaos = parseInt(uCostChaosMatch[1]);
+      elementUpgradeCost.Shock = parseInt(uCostShockMatch[1]);
+      elementUpgradeCost.Fire = parseInt(uCostFireMatch[1]);
+      elementUpgradeCost.Ice = parseInt(uCostIceMatch[1]);
+      weaknessMultiplier.Chaos = parseFloat(weakChaosMatch[1]);
+      weaknessMultiplier.Shock = parseFloat(weakShockMatch[1]);
+      weaknessMultiplier.Fire = parseFloat(weakFireMatch[1]);
+      weaknessMultiplier.Ice = parseFloat(weakIceMatch[1]);
+
       // Update UI elements.
       scoreDisplay.innerText = "Score: " + score;
       enemyHPElem.innerText = `Enemy HP: ${enemyHP.toFixed(2)}`;
+      enemyTypeElem.innerHTML = `Type: <span style="color: ${elementColors[enemyType]};">${enemyType}</span>`;
+
+      // Update upgrade buttons.
+      for (const element in upgradeButtons) {
+        upgradeButtons[element].innerText = `Upgrade ${element} (Cost: ${elementUpgradeCost[element]})`;
+      }
+
       console.log("Game state loaded from string!");
     } else {
       alert("Invalid game state string!");
@@ -304,4 +300,4 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Initialize the Game ---
   spawnEnemy();
   console.log("Game initialized. Ready to expand!");
-})
+});
